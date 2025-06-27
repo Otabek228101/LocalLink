@@ -1,0 +1,44 @@
+defmodule LocallinkApi.Post do
+  use Ecto.Schema
+  import Ecto.Changeset
+  alias LocallinkApi.User
+
+  schema "posts" do
+    field :title, :string
+    field :description, :string
+    field :category, :string
+    field :post_type, :string
+    field :location, :string
+    field :urgency, :string
+    field :price, :decimal
+    field :currency, :string, default: "UZB"
+    field :skills_required, :string
+    field :duration_estimate, :string
+    field :max_distance_km, :integer, default: 10
+    field :is_active, :boolean, default: true
+    field :expires_at, :naive_datetime
+    field :images, :string
+    field :contact_preference, :string, default: "app"
+
+    belongs_to :user, User
+
+    timestamps()
+  end
+
+  @doc false
+  def changeset(post, attrs) do
+    post
+    |> cast(attrs, [
+      :title, :description, :category, :post_type, :location, :urgency,
+      :price, :currency, :skills_required, :duration_estimate,
+      :max_distance_km, :is_active, :expires_at, :images, :contact_preference
+    ])
+    |> validate_required([:title, :description, :category, :post_type, :location])
+    |> validate_inclusion(:category, ["job", "task", "event", "help_needed"])
+    |> validate_inclusion(:post_type, ["offer", "seeking"])
+    |> validate_inclusion(:urgency, ["now", "today", "tomorrow", "this_week", "flexible"])
+    |> validate_inclusion(:contact_preference, ["app", "phone", "both"])
+    |> validate_number(:price, greater_than: 0)
+    |> validate_number(:max_distance_km, greater_than: 0)
+  end
+end

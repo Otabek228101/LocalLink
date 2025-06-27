@@ -1,0 +1,73 @@
+import React, { useState } from 'react';
+import { 
+    X,
+  } from 'lucide-react';
+const LoginForm = ({ onClose, onSwitchToRegister }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        onClose();
+      }, 1000);
+    };
+  
+    return (
+      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Вход</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Пароль</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isLoading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+        
+        <p className="text-center mt-4 text-sm">
+          Нет аккаунта?{' '}
+          <button 
+            onClick={onSwitchToRegister}
+            className="text-blue-600 hover:underline"
+          >
+            Зарегистрироваться
+          </button>
+        </p>
+      </div>
+    );
+  };
+
+export default LoginForm;
