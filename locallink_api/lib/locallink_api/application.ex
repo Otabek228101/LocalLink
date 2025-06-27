@@ -12,6 +12,7 @@ defmodule LocallinkApi.Application do
       LocallinkApi.Repo,
       {DNSCluster, query: Application.get_env(:locallink_api, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: LocallinkApi.PubSub},
+      {Guardian.DB.Token.SweeperServer, []},
       # Start the Finch HTTP client for sending emails
       {Finch, name: LocallinkApi.Finch},
       # Start a worker by calling: LocallinkApi.Worker.start_link(arg)
