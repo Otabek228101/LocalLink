@@ -13,70 +13,7 @@ import RegisterForm from './ui/RegisterForm';
 import CreatePostForm from './ui/CreatePostForm';
 import { Post, AppUser } from './api';
 
-const mockUser: AppUser = {
-  id: '1',
-  first_name: 'Анна',
-  last_name: 'Иванова',
-  email: 'anna@example.com',
-  location: { lat: 41.2995, lng: 69.2401, address: 'Ташкент, Узбекистан' },
-  skills: ['Уборка', 'Готовка', 'Уход за детьми'],
-  rating: 4.8,
-  verified: true
-};
-
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    title: 'Нужна помощь с уборкой дома',
-    description: 'Требуется генеральная уборка 3-комнатной квартиры. Примерно 4-5 часов работы.',
-    category: 'task',
-    post_type: 'seeking',
-    urgency: 'today',
-    price: 50000,
-    currency: 'UZS',
-    location: 'Мирабад, Ташкент',
-    skills_required: ['Уборка'],
-    user: { 
-      id: '2', 
-      first_name: 'Дилшод',
-      last_name: 'Рахимов',
-      rating: 4.5 
-    }
-  },
-  {
-    id: '2',
-    title: 'Футбольная игра в парке',
-    description: 'Собираемся играть в футбол в воскресенье утром. Нужно еще 4 человека.',
-    category: 'social',
-    post_type: 'offer',
-    urgency: 'tomorrow',
-    location: 'Парк Навои, Ташкент',
-    user: { 
-      id: '3', 
-      first_name: 'Азиз',
-      last_name: 'Каримов',
-      rating: 4.2 
-    }
-  },
-  {
-    id: '3',
-    title: 'Предлагаю услуги репетитора',
-    description: 'Математика и физика для школьников 7-11 классов. Опыт работы 5 лет.',
-    category: 'job',
-    post_type: 'offer',
-    urgency: 'flexible',
-    price: 80000,
-    currency: 'UZS',
-    location: 'Чиланзар, Ташкент',
-    skills_required: ['Математика', 'Физика'],
-    user: { 
-      id: '4', 
-      first_name: 'Марина',
-      last_name: 'Петрова',
-      rating: 4.9 
-    }
-  }
-];
+const API_BASE_URL = 'http://localhost:4000/api';
 
 const LocalLinkApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -86,13 +23,43 @@ const LocalLinkApp = () => {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [posts] = useState<Post[]>(mockPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/posts`);
+      const data = await res.json();
+      if (res.ok) {
+        setPosts(data.posts);
+      } else {
+        console.error(data.error || 'Failed to load posts');
+      }
+    } catch (err) {
+      console.error('Failed to load posts', err);
+    }
+  };
 
+  const fetchCurrentUser = async (token: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCurrentUser(data.user);
+        setIsAuthenticated(true);
+      } else {
+        console.error(data.error || 'Failed to load user');
+      }
+    } catch (err) {
+      console.error('Failed to load user', err);
+    }
+  };
   useEffect(() => {
+    fetchPosts();
+
     const token = localStorage.getItem('token');
     if (token) {
-      setIsAuthenticated(true);
-      setCurrentUser(mockUser);
+      fetchCurrentUser(token);
     }
   }, []);
 
@@ -124,7 +91,7 @@ const LocalLinkApp = () => {
   };
 
   const handlePostCreated = () => {
-    console.log('Post created');
+    fetchPosts();
   };
 
   const filteredPosts = posts.filter(post => {
