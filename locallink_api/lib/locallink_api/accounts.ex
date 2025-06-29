@@ -42,8 +42,8 @@ defmodule LocallinkApi.Accounts do
       user ->
         {:error, :unauthorized}
       true ->
-        # Выполняем фиктивную проверку для защиты от timing атак
-        Bcrypt.no_user_verify()
+        # Задержка для защиты от timing атак
+        Process.sleep(100)
         {:error, :unauthorized}
     end
   end

@@ -1,4 +1,4 @@
-defmodule LocallinkApiWeb.Router do
+﻿defmodule LocallinkApiWeb.Router do
   use LocallinkApiWeb, :router
 
   pipeline :api do
@@ -8,17 +8,16 @@ defmodule LocallinkApiWeb.Router do
 
   pipeline :auth do
     plug LocallinkApi.Guardian.AuthPipeline
+    plug Guardian.Plug.EnsureAuthenticated
   end
 
   scope "/", LocallinkApiWeb do
     pipe_through :api
-
     get "/health", HealthController, :check
   end
 
   scope "/api/v1", LocallinkApiWeb do
     pipe_through :api
-
     post "/register", AuthController, :register
     post "/login", AuthController, :login
     get "/posts", PostController, :index
@@ -27,7 +26,6 @@ defmodule LocallinkApiWeb.Router do
 
   scope "/api/v1", LocallinkApiWeb do
     pipe_through [:api, :auth]
-
     get "/me", AuthController, :me
     post "/posts", PostController, :create
     put "/posts/:id", PostController, :update
