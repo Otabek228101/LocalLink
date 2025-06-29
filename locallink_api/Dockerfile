@@ -1,38 +1,73 @@
-# 1. Официальный Elixir-образ + Node.js
-FROM elixir:1.14-slim
+# Use Elixir official image with Erlang/OTP 26 and Elixir 1.15
+FROM elixir:1.15-otp-26 AS builder
 
-# 2. Установка зависимостей ОС
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
-  build-essential \
-  git \
-  curl \
-  npm \
-  inotify-tools \
-  postgresql-client \
-  && apt-get clean
+    build-essential \
+    nodejs \
+    npm \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3. Установка Node.js (для frontend сборки)
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs
+# Set build ENV
+ENV MIX_ENV=prod
 
-# 4. Создание рабочей директории
+# Install hex and rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Create app directory
 WORKDIR /app
 
-# 5. Кэшинг зависимостей
-COPY mix.exs mix.lock ./
+# Copy mix files
+COPY mix.exs ./
+
+# Create empty mix.lock if it doesn't exist
+RUN touch mix.lock
+
+# Install mix dependencies
+RUN mix deps.get --only prod
+
+# Copy config files
 COPY config config
-RUN mix local.hex --force && \
-    mix local.rebar --force && \
-    mix deps.get
 
-# 6. Копирование проекта
-COPY . .
+# Copy lib, priv and other app files
+COPY lib lib
+COPY priv priv
 
-# 7. Компиляция
-RUN mix deps.compile && mix compile
+# Compile the project
+RUN mix compile
 
-# 9. Экспонируем порт Phoenix
+# Build the release
+RUN mix release
+
+# ---- Application Stage ----
+FROM debian:bullseye-slim AS app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    locales \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+
+# Create a user to run the app
+RUN useradd --create-home app
+WORKDIR /home/app
+USER app
+
+# Copy the release from builder stage
+COPY --from=builder --chown=app:app /app/_build/prod/rel/locallink_api ./
+
+# Expose port
 EXPOSE 4000
 
-# 10. Команда по умолчанию
-CMD ["mix", "phx.server"]
+# Set environment
+ENV HOME=/home/app
+
+# Start the Phoenix app
+CMD ["./bin/locallink_api", "start"]

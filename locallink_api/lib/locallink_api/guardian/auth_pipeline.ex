@@ -1,5 +1,7 @@
-defmodule LocallinkApi.Guardian.AuthPipeline do
-  use Guardian.Plug.Pipeline, otp_app: :locallink_api
+﻿defmodule LocallinkApi.Guardian.AuthPipeline do
+  use Guardian.Plug.Pipeline,
+    otp_app: :locallink_api,
+    error_handler: LocallinkApi.Guardian.AuthErrorHandler
 
   plug Guardian.Plug.VerifySession
   plug Guardian.Plug.VerifyHeader

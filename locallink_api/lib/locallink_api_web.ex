@@ -6,10 +6,9 @@ defmodule LocallinkApiWeb do
   This can be used in your application as:
 
       use LocallinkApiWeb, :controller
-      use LocallinkApiWeb, :html
 
   The definitions below will be executed for every controller,
-  component, etc, so keep them short and clean, focused
+  so keep them short and clean, focused
   on imports, uses and aliases.
 
   Do NOT define functions inside the quoted expressions
@@ -38,8 +37,7 @@ defmodule LocallinkApiWeb do
   def controller do
     quote do
       use Phoenix.Controller,
-        formats: [:html, :json],
-        layouts: [html: LocallinkApiWeb.Layouts]
+        formats: [:html, :json]
 
       use Gettext, backend: LocallinkApiWeb.Gettext
 
@@ -59,7 +57,7 @@ defmodule LocallinkApiWeb do
   end
 
   @doc """
-  When used, dispatch to the appropriate controller/live_view/etc.
+  When used, dispatch to the appropriate controller/etc.
   """
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])

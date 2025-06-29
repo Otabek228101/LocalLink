@@ -11,15 +11,14 @@ defmodule LocallinkApi.Repo.Migrations.CreateUsers do
       add :location, :string
       add :skills, :text
       add :availability, :string
-      add :is_verified, :boolean, default: false
+      add :is_verified, :boolean, default: false, null: false
       add :profile_image_url, :string
-      add :rating, :decimal, precision: 3, scale: 2, default: 0.0
-      add :total_jobs_completed, :integer, default: 0
+      add :rating, :decimal, precision: 3, scale: 2
+      add :total_jobs_completed, :integer, default: 0, null: false
 
       timestamps()
     end
 
     create unique_index(:users, [:email])
-    create index(:users, [:location])
   end
 end

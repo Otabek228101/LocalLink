@@ -1,3 +1,10 @@
 defmodule LocallinkApi.Mailer do
-  use Swoosh.Mailer, otp_app: :locallink_api
+  @moduledoc """
+  Simple mailer stub - email functionality disabled for now
+  """
+
+  def deliver(_email) do
+    # Email functionality disabled
+    {:ok, :delivered}
+  end
 end

@@ -1,4 +1,4 @@
-defmodule LocallinkApiWeb.Router do
+﻿defmodule LocallinkApiWeb.Router do
   use LocallinkApiWeb, :router
 
   pipeline :api do
@@ -10,27 +10,25 @@ defmodule LocallinkApiWeb.Router do
     plug LocallinkApi.Guardian.AuthPipeline
   end
 
-  # Публичные маршруты
-  scope "/api", LocallinkApiWeb do
+  scope "/", LocallinkApiWeb do
+    pipe_through :api
+    
+    get "/health", HealthController, :check
+  end
+
+  scope "/api/v1", LocallinkApiWeb do
     pipe_through :api
 
-    # Аутентификация
     post "/register", AuthController, :register
     post "/login", AuthController, :login
-
-    # Публичные посты (просмотр без авторизации)
     get "/posts", PostController, :index
     get "/posts/:id", PostController, :show
   end
 
-  # Защищенные маршруты
-  scope "/api", LocallinkApiWeb do
+  scope "/api/v1", LocallinkApiWeb do
     pipe_through [:api, :auth]
 
-    # Пользователь
     get "/me", AuthController, :me
-
-    # Посты (требуют авторизации)
     post "/posts", PostController, :create
     put "/posts/:id", PostController, :update
     delete "/posts/:id", PostController, :delete
