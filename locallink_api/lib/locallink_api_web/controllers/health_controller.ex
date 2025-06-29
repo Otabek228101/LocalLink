@@ -1,10 +1,10 @@
-﻿defmodule LocallinkApiWeb.HealthController do
+defmodule LocallinkApiWeb.HealthController do
   use LocallinkApiWeb, :controller
 
   alias LocallinkApi.Repo
 
   def check(conn, _params) do
-    db_status = 
+    db_status =
       try do
         Ecto.Adapters.SQL.query!(Repo, "SELECT 1", [])
         "ok"

@@ -1,4 +1,4 @@
-﻿defmodule LocallinkApiWeb.Router do
+defmodule LocallinkApiWeb.Router do
   use LocallinkApiWeb, :router
 
   pipeline :api do
@@ -12,7 +12,7 @@
 
   scope "/", LocallinkApiWeb do
     pipe_through :api
-    
+
     get "/health", HealthController, :check
   end
 
