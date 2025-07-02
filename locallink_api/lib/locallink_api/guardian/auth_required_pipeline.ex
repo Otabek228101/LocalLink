@@ -1,4 +1,4 @@
-defmodule LocallinkApi.Guardian.AuthPipeline do
+defmodule LocallinkApi.Guardian.AuthRequiredPipeline do
   use Guardian.Plug.Pipeline,
     otp_app: :locallink_api,
     module: LocallinkApi.Guardian,

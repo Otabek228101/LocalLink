@@ -11,7 +11,7 @@ defmodule LocallinkApi.Post do
     field :location, :string
     field :urgency, :string
     field :price, :decimal
-    field :currency, :string, default: "UZB"
+    field :currency, :string, default: "UZS"
     field :skills_required, :string
     field :duration_estimate, :string
     field :max_distance_km, :integer, default: 10
@@ -34,11 +34,14 @@ defmodule LocallinkApi.Post do
       :max_distance_km, :is_active, :expires_at, :images, :contact_preference
     ])
     |> validate_required([:title, :description, :category, :post_type, :location])
-    |> validate_inclusion(:category, ["job", "task", "event", "help_needed"])
+    |> validate_inclusion(:category, ["job", "task", "event", "help_needed", "social"])
     |> validate_inclusion(:post_type, ["offer", "seeking"])
     |> validate_inclusion(:urgency, ["now", "today", "tomorrow", "this_week", "flexible"])
     |> validate_inclusion(:contact_preference, ["app", "phone", "both"])
     |> validate_number(:price, greater_than: 0)
     |> validate_number(:max_distance_km, greater_than: 0)
+    |> validate_length(:title, min: 3, max: 200)
+    |> validate_length(:description, min: 10, max: 1000)
+    |> validate_length(:location, min: 2, max: 100)
   end
 end

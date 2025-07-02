@@ -18,28 +18,50 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess }: LoginFormPro
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch('http://localhost:4000/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ email, password })
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Неверный email или пароль');
+
+      // Проверяем, что ответ действительно JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Сервер вернул некорректный ответ. Проверьте, что API сервер запущен.');
       }
-      
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Ошибка сервера: ${response.status}`);
+      }
+
+      if (!data.token || !data.user) {
+        throw new Error('Некорректный ответ от сервера');
+      }
+
       localStorage.setItem('token', data.token);
       onLoginSuccess(data.token, data.user);
       onClose();
     } catch (error: unknown) {
+      console.error('Login error:', error);
       let errorMessage = 'Неизвестная ошибка';
+
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Не удается подключиться к серверу. Проверьте, что сервер запущен на порту 4000.';
+        } else if (error.message.includes('JSON')) {
+          errorMessage = 'Ошибка обработки ответа сервера. Проверьте настройки API.';
+        } else {
+          errorMessage = error.message;
+        }
       }
+
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -54,9 +76,13 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess }: LoginFormPro
           <X size={20} />
         </button>
       </div>
-      
-      {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
-      
+
+      {error && (
+        <div className="text-red-500 mb-4 text-sm bg-red-50 p-3 rounded">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Email</label>
@@ -66,9 +92,10 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess }: LoginFormPro
             onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium mb-1">Пароль</label>
           <input
@@ -77,27 +104,35 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess }: LoginFormPro
             onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+            disabled={isLoading}
           />
         </div>
-        
+
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Вход...' : 'Войти'}
         </button>
       </form>
-      
+
       <p className="text-center mt-4 text-sm">
         Нет аккаунта?{' '}
-        <button 
+        <button
           onClick={onSwitchToRegister}
           className="text-blue-600 hover:underline"
+          disabled={isLoading}
         >
           Зарегистрироваться
         </button>
       </p>
+
+      <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        <strong>Тестовые аккаунты:</strong><br/>
+        alice@example.com / password123<br/>
+        bob@example.com / password123
+      </div>
     </div>
   );
 };

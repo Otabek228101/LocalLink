@@ -4,7 +4,14 @@ defmodule LocallinkApiWeb.PostController do
   alias LocallinkApi.Posts
   alias LocallinkApi.Guardian
 
+  require Logger
+
+  # Используем fallback controller для обработки ошибок
+  action_fallback LocallinkApiWeb.FallbackController
+
   def index(conn, params) do
+    Logger.info("Posts index request with params: #{inspect(params)}")
+
     filters = %{
       category: params["category"],
       location: params["location"],
@@ -12,6 +19,7 @@ defmodule LocallinkApiWeb.PostController do
     }
 
     posts = Posts.list_posts(filters)
+    Logger.info("Found #{length(posts)} posts")
 
     conn
     |> json(%{
@@ -20,24 +28,28 @@ defmodule LocallinkApiWeb.PostController do
   end
 
   def show(conn, %{"id" => id}) do
+    Logger.info("Post show request for ID: #{id}")
+
     case Posts.get_post(id) do
       {:ok, post} ->
         conn
         |> json(%{post: format_post(post)})
 
       {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Post not found"})
+        Logger.warn("Post not found: #{id}")
+        {:error, :not_found}
     end
   end
 
   def create(conn, %{"post" => post_params}) do
     user = Guardian.Plug.current_resource(conn)
+    Logger.info("Creating post for user: #{user.id}")
+    Logger.debug("Post params: #{inspect(post_params)}")
 
     case Posts.create_post(user, post_params) do
       {:ok, post} ->
         post = LocallinkApi.Repo.preload(post, :user)
+        Logger.info("Post created successfully: #{post.id}")
 
         conn
         |> put_status(:created)
@@ -47,14 +59,14 @@ defmodule LocallinkApiWeb.PostController do
         })
 
       {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{errors: translate_errors(changeset)})
+        Logger.warn("Post creation failed: #{inspect(changeset.errors)}")
+        {:error, changeset}
     end
   end
 
   def update(conn, %{"id" => id, "post" => post_params}) do
     user = Guardian.Plug.current_resource(conn)
+    Logger.info("Update post request for ID: #{id} by user: #{user.id}")
 
     case Posts.get_post(id) do
       {:ok, post} ->
@@ -62,6 +74,7 @@ defmodule LocallinkApiWeb.PostController do
           case Posts.update_post(post, post_params) do
             {:ok, updated_post} ->
               updated_post = LocallinkApi.Repo.preload(updated_post, :user)
+              Logger.info("Post updated successfully: #{id}")
 
               conn
               |> json(%{
@@ -70,60 +83,72 @@ defmodule LocallinkApiWeb.PostController do
               })
 
             {:error, changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{errors: translate_errors(changeset)})
+              Logger.warn("Post update failed: #{inspect(changeset.errors)}")
+              {:error, changeset}
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{error: "You can only update your own posts"})
+          Logger.warn("Unauthorized update attempt for post: #{id}")
+          {:error, :forbidden}
         end
 
       {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Post not found"})
+        Logger.warn("Post not found for update: #{id}")
+        {:error, :not_found}
     end
   end
 
   def delete(conn, %{"id" => id}) do
     user = Guardian.Plug.current_resource(conn)
+    Logger.info("Delete post request for ID: #{id} by user: #{user.id}")
 
     case Posts.get_post(id) do
       {:ok, post} ->
         if post.user_id == user.id do
           case Posts.delete_post(post) do
             {:ok, _deleted_post} ->
+              Logger.info("Post deleted successfully: #{id}")
+
               conn
               |> json(%{message: "Post deleted successfully"})
 
             {:error, _changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{error: "Failed to delete post"})
+              Logger.error("Failed to delete post: #{id}")
+              {:error, "Failed to delete post"}
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{error: "You can only delete your own posts"})
+          Logger.warn("Unauthorized delete attempt for post: #{id}")
+          {:error, :forbidden}
         end
 
       {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Post not found"})
+        Logger.warn("Post not found for deletion: #{id}")
+        {:error, :not_found}
     end
   end
 
   def my_posts(conn, _params) do
     user = Guardian.Plug.current_resource(conn)
+    Logger.info("My posts request for user: #{user.id}")
+
     posts = Posts.get_user_posts(user.id)
+    Logger.info("Found #{length(posts)} posts for user: #{user.id}")
 
     conn
     |> json(%{
       posts: Enum.map(posts, &format_post/1)
     })
+  end
+
+  # Обработка неправильного формата запроса для create
+  def create(conn, _params) do
+    Logger.warn("Invalid create post parameters")
+    {:error, "Invalid request format. Expected: {\"post\": {...}}"}
+  end
+
+  # Обработка неправильного формата запроса для update
+  def update(conn, _params) do
+    Logger.warn("Invalid update post parameters")
+    {:error, "Invalid request format. Expected: {\"post\": {...}}"}
   end
 
   defp format_post(post) do
@@ -154,15 +179,5 @@ defmodule LocallinkApiWeb.PostController do
         total_jobs_completed: post.user.total_jobs_completed
       }
     }
-  end
-
-  defp translate_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, &translate_error/1)
-  end
-
-  defp translate_error({msg, opts}) do
-    Enum.reduce(opts, msg, fn {key, value}, acc ->
-      String.replace(acc, "%{#{key}}", to_string(value))
-    end)
   end
 end

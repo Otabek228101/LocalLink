@@ -25,26 +25,20 @@ defmodule LocallinkApi.MixProject do
 
   defp deps do
     [
-      # Phoenix Framework
       {:phoenix, "~> 1.7.10"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_live_dashboard, "~> 0.8.2"},
-      {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.5"},
 
-      # Authentication & Security - используем только Guardian
       {:guardian, "~> 2.3"},
 
-      # CORS support
       {:cors_plug, "~> 3.0"},
 
-      # Geolocation with PostGIS
       {:geo, "~> 3.4"},
       {:geo_postgis, "~> 3.4"},
 

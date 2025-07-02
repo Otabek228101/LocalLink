@@ -26,18 +26,18 @@ export interface Post {
   id: string;
   title: string;
   description: string;
-  category: string;
-  post_type: string;
-  urgency: string;
+  category: 'job' | 'task' | 'event' | 'help_needed' | 'social';
+  post_type: 'offer' | 'seeking';
+  urgency: 'now' | 'today' | 'tomorrow' | 'this_week' | 'flexible';
   price?: number;
   currency?: string;
   location: string;
-  skills_required?: string[];
+  skills_required?: string | string[] | Record<string, unknown> | null; // Более точная типизация
   max_distance_km?: number;
   is_active: boolean;
   expires_at?: string;
   images?: string;
-  contact_preference: string;
+  contact_preference: 'app' | 'phone' | 'both';
   inserted_at: string;
   updated_at: string;
   user: {
@@ -83,7 +83,15 @@ export class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (!response.ok) {
@@ -93,16 +101,40 @@ export class ApiClient {
       return { data };
     } catch (error) {
       console.error('API request failed:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { error: 'Request timeout' };
+      }
       return { error: 'Network error occurred' };
     }
   }
 
   // Auth methods
   async login(email: string, password: string) {
-    return this.request<{ token: string; user: AppUser }>('/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+    // Используем правильный URL для логина
+    const url = 'http://localhost:4000/api/login';
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: data.error || 'Login failed', errors: data.errors };
+      }
+
+      return { data };
+    } catch (error) {
+      console.error('Login request failed:', error);
+      return { error: 'Network error occurred' };
+    }
   }
 
   async register(userData: {

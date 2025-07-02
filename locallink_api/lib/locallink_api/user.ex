@@ -1,5 +1,8 @@
 defmodule LocallinkApi.User do
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @derive {Phoenix.Param, key: :id}
   use Ecto.Schema
+
   import Ecto.Changeset
   alias LocallinkApi.Post
 

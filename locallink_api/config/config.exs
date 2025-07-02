@@ -2,6 +2,9 @@
 import Config
 
 # Configure your database
+config :locallink_api,
+  ecto_repos: [LocallinkApi.Repo]
+
 config :locallink_api, LocallinkApi.Repo,
   username: "postgres",
   password: "postgres",
@@ -29,7 +32,7 @@ config :locallink_api, LocallinkApi.Mailer, adapter: Swoosh.Adapters.Local
 # Configure Guardian for JWT authentication
 config :locallink_api, LocallinkApi.Guardian,
   issuer: "locallink_api",
-  secret_key: "your-secret-key-here-make-it-very-long-and-secure"
+  secret_key: "xQmA78HdQp3hKxLs+VhqWz1d9UebCxlZc6Agyb8fWTzt1YKqvSBRYk+Ak0CB+I8N"
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -43,7 +46,8 @@ config :phoenix, :json_library, Jason
 config :cors_plug,
   origin: ["http://localhost:3000", "http://localhost:3001"],
   max_age: 86400,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  headers: ["Authorization", "Content-Type"]
 
 # Redis configuration for caching and sessions
 config :redix,

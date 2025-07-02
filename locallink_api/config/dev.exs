@@ -5,7 +5,7 @@ import Config
 config :locallink_api, LocallinkApi.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "localhost",
+  hostname: "db",
   database: "locallink_api_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,

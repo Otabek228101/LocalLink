@@ -1,210 +1,245 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
 
-interface CreatePostFormProps {
+interface Props {
   onClose: () => void;
   onPostCreated: () => void;
 }
 
-interface PostFormData {
-  title: string;
-  description: string;
-  category: string;
-  post_type: string;
-  urgency: string;
-  price: string;
-  location: string;
-  skills_required: string[];
-}
-
-const CreatePostForm = ({ onClose, onPostCreated }: CreatePostFormProps) => {
-  const [formData, setFormData] = useState<PostFormData>({
+const CreatePostForm: React.FC<Props> = ({ onClose, onPostCreated }) => {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: 'task',
     post_type: 'seeking',
+    location: '',
     urgency: 'flexible',
     price: '',
-    location: 'Ташкент, Узбекистан',
-    skills_required: []
+    currency: 'UZS',
+    skills_required: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: FormEvent) => {
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Требуется авторизация');
-      return;
-    }
-    
     setIsLoading(true);
     setError('');
-    
+
     try {
-      const response = await fetch('http://localhost:4000/api/posts', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Необходимо войти в систему');
+        setIsLoading(false);
+        return;
+      }
+
+      // Подготавливаем данные для отправки
+      const postData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        post_type: formData.post_type,
+        location: formData.location.trim(),
+        urgency: formData.urgency,
+        price: formData.price ? parseFloat(formData.price) : null,
+        currency: formData.currency,
+        skills_required: formData.skills_required.trim(), // Отправляем как строку
+      };
+
+      console.log('Отправляем данные:', postData);
+
+      const response = await fetch("http://localhost:4000/api/v1/posts", {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          post: {
-            ...formData,
-            price: formData.price ? parseFloat(formData.price) : null,
-            currency: 'UZS'
-          }
+        body: JSON.stringify({
+          post: postData
         })
       });
-      
+
+      // Проверяем, что ответ действительно JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Сервер вернул некорректный ответ. Проверьте авторизацию и настройки API.');
+      }
+
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.errors || 'Ошибка создания поста');
+      console.log('Ответ сервера:', data);
+
+      if (response.ok) {
+        onPostCreated();
+        onClose();
+      } else {
+        const errorMsg = data.errors ?
+          Object.entries(data.errors).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`).join('; ')
+          : data.error || `Ошибка сервера: ${response.status}`;
+        setError(errorMsg);
       }
-      
-      onPostCreated();
-      onClose();
-    } catch (error: unknown) {
-      let errorMessage = 'Неизвестная ошибка';
-      if (error instanceof Error) {
-        errorMessage = error.message;
+    } catch (err) {
+      console.error('Ошибка при создании поста:', err);
+
+      let errorMessage = 'Ошибка подключения к серверу';
+      if (err instanceof Error) {
+        if (err.message.includes('fetch')) {
+          errorMessage = 'Не удается подключиться к серверу. Проверьте, что сервер запущен.';
+        } else if (err.message.includes('JSON')) {
+          errorMessage = 'Ошибка обработки ответа сервера. Возможно, проблема с авторизацией.';
+        } else {
+          errorMessage = err.message;
+        }
       }
+
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'post_type' 
-        ? (value === 'request' ? 'seeking' : 'offer')
-        : value
-    }));
-  };
-
   return (
-    <div className="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Создать объявление</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-          <X size={20} />
-        </button>
-      </div>
-      
-      {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
-      
+    <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+      <button
+        onClick={onClose}
+        disabled={isLoading}
+        className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-xl disabled:opacity-50"
+      >
+        &times;
+      </button>
+      <h2 className="text-xl font-bold mb-4">Создать объявление</h2>
+
+      {error && <p className="text-red-600 mb-3 text-sm">{error}</p>}
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Заголовок</label>
+        <input
+          type="text"
+          name="title"
+          placeholder="Заголовок"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        />
+
+        <textarea
+          name="description"
+          placeholder="Описание"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          disabled={isLoading}
+          rows={3}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        />
+
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          <option value="task">Задача</option>
+          <option value="job">Работа</option>
+          <option value="event">Событие</option>
+          <option value="help_needed">Нужна помощь</option>
+        </select>
+
+        <select
+          name="post_type"
+          value={formData.post_type}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          <option value="seeking">Нужна помощь</option>
+          <option value="offer">Предлагаю помощь</option>
+        </select>
+
+        <input
+          type="text"
+          name="location"
+          placeholder="Локация"
+          value={formData.location}
+          onChange={handleChange}
+          required
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        />
+
+        <select
+          name="urgency"
+          value={formData.urgency}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          <option value="flexible">Гибкий график</option>
+          <option value="this_week">На этой неделе</option>
+          <option value="tomorrow">Завтра</option>
+          <option value="today">Сегодня</option>
+          <option value="now">Срочно</option>
+        </select>
+
+        <input
+          type="text"
+          name="skills_required"
+          placeholder="Необходимые навыки (через запятую)"
+          value={formData.skills_required}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="w-full border px-4 py-2 rounded-lg disabled:opacity-50"
+        />
+
+        <div className="flex space-x-2">
           <input
-            type="text"
-            name="title"
-            value={formData.title}
+            type="number"
+            name="price"
+            placeholder="Цена"
+            value={formData.price}
             onChange={handleChange}
-            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-1">Описание</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Категория</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="task">Задача</option>
-              <option value="job">Работа</option>
-              <option value="social">Социальное</option>
-              <option value="event">Событие</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Тип</label>
-            <select
-              name="post_type"
-              value={formData.post_type === 'seeking' ? 'request' : 'offer'}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="request">Нужна помощь</option>
-              <option value="offer">Предлагаю</option>
-            </select>
-          </div>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-1">Срочность</label>
-            <select
-              name="urgency"
-              value={formData.urgency}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="now">Срочно</option>
-              <option value="today">Сегодня</option>
-              <option value="tomorrow">Завтра</option>
-              <option value="this_week">На этой неделе</option>
-              <option value="flexible">Гибкий график</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Цена (необязательно)</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              placeholder="Например: 50000"
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Локация</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            min="0"
+            step="0.01"
+            className="flex-1 border px-4 py-2 rounded-lg disabled:opacity-50"
+          />
+          <select
+            name="currency"
+            value={formData.currency}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="border px-2 py-2 rounded-lg disabled:opacity-50"
           >
-            {isLoading ? 'Создание...' : 'Создать объявление'}
-          </button>
-        </form>
-      </div>
-    );
+            <option value="UZS">UZS</option>
+            <option value="USD">$</option>
+            <option value="EUR">€</option>
+            <option value="RUB">₽</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Создание...' : 'Создать'}
+        </button>
+      </form>
+    </div>
+  );
 };
 
 export default CreatePostForm;
