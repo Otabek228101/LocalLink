@@ -31,4 +31,8 @@ defmodule LocallinkApiWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug LocallinkApiWeb.Router
+  socket "/socket", LocallinkApiWeb.UserSocket,
+  websocket: true,
+  longpoll: false
+
 end

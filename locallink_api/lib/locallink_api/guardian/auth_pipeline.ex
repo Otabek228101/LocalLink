@@ -1,10 +1,15 @@
 defmodule LocallinkApi.Guardian.AuthPipeline do
-  use Guardian.Plug.Pipeline,
-    otp_app: :locallink_api,
-    module: LocallinkApi.Guardian,
-    error_handler: LocallinkApi.Guardian.AuthErrorHandler
+  import Plug.Conn
+  import Guardian.Plug
 
-  plug Guardian.Plug.VerifyHeader, scheme: "Bearer"
-  plug Guardian.Plug.EnsureAuthenticated
-  plug Guardian.Plug.LoadResource
+  @behaviour Plug
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    conn
+    |> Guardian.Plug.VerifyHeader.call(scheme: "Bearer")
+    |> Guardian.Plug.EnsureAuthenticated.call([])
+    |> Guardian.Plug.LoadResource.call([])
+  end
 end

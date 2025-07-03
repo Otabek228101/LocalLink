@@ -1,4 +1,6 @@
 defmodule LocallinkApi.Post do
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   use Ecto.Schema
   import Ecto.Changeset
   alias LocallinkApi.User
@@ -19,6 +21,7 @@ defmodule LocallinkApi.Post do
     field :expires_at, :naive_datetime
     field :images, :string
     field :contact_preference, :string, default: "app"
+    field :coordinates, Geo.PostGIS.Geometry
 
     belongs_to :user, User
 
@@ -31,7 +34,8 @@ defmodule LocallinkApi.Post do
     |> cast(attrs, [
       :title, :description, :category, :post_type, :location, :urgency,
       :price, :currency, :skills_required, :duration_estimate,
-      :max_distance_km, :is_active, :expires_at, :images, :contact_preference
+      :max_distance_km, :is_active, :expires_at, :images,
+      :contact_preference, :coordinates
     ])
     |> validate_required([:title, :description, :category, :post_type, :location])
     |> validate_inclusion(:category, ["job", "task", "event", "help_needed", "social"])
@@ -43,5 +47,11 @@ defmodule LocallinkApi.Post do
     |> validate_length(:title, min: 3, max: 200)
     |> validate_length(:description, min: 10, max: 1000)
     |> validate_length(:location, min: 2, max: 100)
+    |> validate_change(:coordinates, fn :coordinates, value ->
+      case value do
+        %Geo.Point{} -> []
+        _ -> [coordinates: "Invalid coordinates format"]
+      end
+    end)
   end
 end

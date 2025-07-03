@@ -11,16 +11,11 @@ defmodule LocallinkApiWeb.Router do
     plug Guardian.Plug.EnsureAuthenticated
   end
 
-  pipeline :optional_auth do
-    plug LocallinkApi.Guardian.AuthPipeline
-  end
-
   scope "/", LocallinkApiWeb do
     pipe_through :api
     get "/health", HealthController, :check
   end
 
-  # Исправляем маршруты - убираем дублирование /api/v1
   scope "/api", LocallinkApiWeb do
     pipe_through :api
     post "/login", AuthController, :login
@@ -31,6 +26,7 @@ defmodule LocallinkApiWeb.Router do
     post "/register", AuthController, :register
     get "/posts", PostController, :index
     get "/posts/:id", PostController, :show
+    get "/hot-zones", PostController, :hot_zones
   end
 
   scope "/api/v1", LocallinkApiWeb do
@@ -41,4 +37,22 @@ defmodule LocallinkApiWeb.Router do
     delete "/posts/:id", PostController, :delete
     get "/my-posts", PostController, :my_posts
   end
+
+  scope "/api/v1", LocallinkApiWeb do
+    pipe_through [:api, LocallinkApi.Guardian.AuthPipeline]
+
+    resources "/conversations", ConversationController, only: [:index, :create]
+
+    get "/conversations/:conversation_id/messages", MessageController, :index
+    post "/conversations/:conversation_id/messages", MessageController, :create
+  end
+
+  scope "/api/v1", LocallinkApiWeb do
+    pipe_through [:api, LocallinkApi.Guardian.AuthPipeline]
+
+    resources "/conversations", ConversationController, only: [:index, :show, :create] do
+      resources "/messages", MessageController, only: [:index, :create]
+    end
+  end
+
 end

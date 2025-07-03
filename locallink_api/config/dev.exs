@@ -1,4 +1,3 @@
-# config/dev.exs
 import Config
 
 # Configure your database

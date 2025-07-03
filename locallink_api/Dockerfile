@@ -1,6 +1,5 @@
 FROM elixir:1.15-slim
 
-# Установка зависимостей
 RUN apt-get update && apt-get install -y \
   build-essential \
   nodejs \
