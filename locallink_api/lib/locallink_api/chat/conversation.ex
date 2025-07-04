@@ -1,6 +1,6 @@
 defmodule LocallinkApi.Chat.Conversation do
   @moduledoc """
-  Represents a chat conversation between two users about a specific post.
+  Представляет собой беседу в чате между двумя пользователями по поводу определенной публикации.
   """
 
   use Ecto.Schema
@@ -10,10 +10,10 @@ defmodule LocallinkApi.Chat.Conversation do
   @foreign_key_type :binary_id
 
   schema "conversations" do
-    belongs_to :post, LocallinkApi.Post
+    belongs_to :post, LocallinkApi.Post# под каким постом начали диолог
     belongs_to :user1, LocallinkApi.User
     belongs_to :user2, LocallinkApi.User
-    belongs_to :started_by, LocallinkApi.User
+    belongs_to :started_by, LocallinkApi.User #кто начал диолог
 
     timestamps()
   end
@@ -29,7 +29,7 @@ end
 
 defmodule LocallinkApi.Chat.Message do
   @moduledoc """
-  Represents a message sent between users inside a conversation.
+  Представляет собой сообщение, отправляемое между пользователями в ходе диалога.
   """
 
   use Ecto.Schema

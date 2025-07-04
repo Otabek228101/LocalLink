@@ -1,3 +1,5 @@
+#Вся логика работы с пользователями
+
 defmodule LocallinkApi.Accounts do
   @moduledoc """
   The Accounts context.

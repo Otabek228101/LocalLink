@@ -1,3 +1,5 @@
+# ролверяет токен ок или нет
+
 defmodule LocallinkApi.Guardian.AuthRequiredPipeline do
   import Plug.Conn
   import Guardian.Plug

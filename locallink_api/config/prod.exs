@@ -1,9 +1,7 @@
-# config/prod.exs
-import Config
+#Настройки для реального сервера
 
-# For production, don't forget to configure the url host
-# to something meaningful, Phoenix uses this information
-# when generating URLs.
+import Config
+# создание URL адресса
 config :locallink_api, LocallinkApiWeb.Endpoint,
   url: [host: "api.locallink.com", port: 443, scheme: "https"],
   http: [
@@ -17,7 +15,7 @@ config :locallink_api, LocallinkApiWeb.Endpoint,
     "https://app.locallink.com"
   ]
 
-# Configure SSL
+# настройки безоп. SSL (Secure Sockets Layer)
 config :locallink_api, LocallinkApiWeb.Endpoint,
   https: [
     port: 443,
@@ -26,12 +24,11 @@ config :locallink_api, LocallinkApiWeb.Endpoint,
     certfile: {:system, "SSL_CERT_PATH"}
   ]
 
-# Configures the database
+# поключение к db DATABASE_URL
 config :locallink_api, LocallinkApi.Repo,
   url: {:system, "DATABASE_URL"},
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   socket_options: [:inet6],
-  # Enable PostGIS in production
   types: LocallinkApi.PostgresTypes
 
 # Configure Guardian for production

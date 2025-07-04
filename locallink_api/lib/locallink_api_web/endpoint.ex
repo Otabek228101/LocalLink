@@ -1,3 +1,5 @@
+#Это как "главный вход" в проект — сюда приходят все запросы.
+
 defmodule LocallinkApiWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :locallink_api
 

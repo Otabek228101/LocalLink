@@ -1,3 +1,4 @@
+#мультиязычность  хз зачем нужна , было в начале от фреймворка
 defmodule LocallinkApiWeb.Gettext do
   @moduledoc """
   A module providing Internationalization with a gettext-based API.

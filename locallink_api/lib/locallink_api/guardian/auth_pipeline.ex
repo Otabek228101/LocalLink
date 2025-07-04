@@ -1,3 +1,4 @@
+# ролверяет токен ок или нет
 defmodule LocallinkApi.Guardian.AuthPipeline do
   import Plug.Conn
   import Guardian.Plug

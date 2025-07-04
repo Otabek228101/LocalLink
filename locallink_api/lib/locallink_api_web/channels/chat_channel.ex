@@ -1,3 +1,5 @@
+# логика обмена сообщениями в реальном времени
+
 defmodule LocallinkApiWeb.ChatChannel do
   use Phoenix.Channel
 

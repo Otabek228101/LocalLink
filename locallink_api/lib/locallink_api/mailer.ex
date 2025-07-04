@@ -1,3 +1,5 @@
+# заглушка отправки писем (пока не работает)
+
 defmodule LocallinkApi.Mailer do
   @moduledoc """
   Simple mailer stub - email functionality disabled for now

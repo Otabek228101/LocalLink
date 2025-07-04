@@ -6,6 +6,7 @@ defmodule LocallinkApi.User do
   import Ecto.Changeset
   alias LocallinkApi.Post
 
+  # db
   schema "users" do
     field :email, :string
     field :password_hash, :string
@@ -26,6 +27,7 @@ defmodule LocallinkApi.User do
     timestamps()
   end
 
+  # валидация + хеш пароля
   @doc false
   def changeset(user, attrs) do
     user

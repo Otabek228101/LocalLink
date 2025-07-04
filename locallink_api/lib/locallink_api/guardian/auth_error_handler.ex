@@ -1,3 +1,5 @@
+# ошибки про токе эррор
+
 defmodule LocallinkApi.Guardian.AuthErrorHandler do
   import Plug.Conn
   import Phoenix.Controller, only: [json: 2, put_status: 2]

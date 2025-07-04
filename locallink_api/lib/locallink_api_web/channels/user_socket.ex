@@ -3,8 +3,9 @@ defmodule LocallinkApiWeb.UserSocket do
 
   ## Channels
   channel "chat:*", LocallinkApiWeb.ChatChannel
+  channel "notifications:*", LocallinkApiWeb.NotificationChannel
 
-  # Socket params are passed from the client and can be used to verify and authenticate a user.
+  #Параметры сокета передаются от клиента и могут использоваться для проверки подлинности пользователя.
   def connect(%{"token" => token}, socket, _connect_info) do
     case LocallinkApi.Guardian.resource_from_token(token) do
       {:ok, user, _claims} ->

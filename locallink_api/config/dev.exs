@@ -1,6 +1,8 @@
+#Специальные настройки для разработчиков
+
 import Config
 
-# Configure your database
+# подключение к db
 config :locallink_api, LocallinkApi.Repo,
   username: "postgres",
   password: "postgres",
@@ -9,11 +11,10 @@ config :locallink_api, LocallinkApi.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
-  # Enable PostGIS extension
   types: LocallinkApi.PostgresTypes
 
-# For development, we disable any cache and enable
-# debugging and code reloading.
+# Для целей разработки мы отключаем любой кэш и включаем отладку и перезагрузку кода.
+# запуск сервера
 config :locallink_api, LocallinkApiWeb.Endpoint,
   http: [ip: {0, 0, 0, 0}, port: 4000],
   check_origin: false,

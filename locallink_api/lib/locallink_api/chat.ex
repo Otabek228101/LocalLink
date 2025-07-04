@@ -1,6 +1,8 @@
+#Управляет диалогами и сообщениями
+
 defmodule LocallinkApi.Chat do
   @moduledoc """
-  The Chat context: handles user conversations and messages.
+  Контекст чата: обрабатывает разговоры и сообщения пользователей.
   """
 
   import Ecto.Query, warn: false
@@ -11,7 +13,7 @@ defmodule LocallinkApi.Chat do
   alias LocallinkApi.User
 
   @doc """
-  Starts a new conversation between two users about a specific post, if not already exists.
+  Запускает новый диалог между двумя пользователями о конкретной публикации, если она еще не существует.
   """
   def start_conversation(post_id, user_id, current_user_id) do
     post = Repo.get!(Post, post_id)
@@ -36,7 +38,7 @@ defmodule LocallinkApi.Chat do
   end
 
   @doc """
-  Sends a message inside a conversation.
+  Отправляет сообщение внутри беседы.
   """
   def send_message(attrs) do
     %Message{}
@@ -45,7 +47,7 @@ defmodule LocallinkApi.Chat do
   end
 
   @doc """
-  Returns all messages in a conversation, newest last.
+  Возвращает все сообщения в переписке, включая последние.
   """
   def list_messages(conversation_id) do
     Message
@@ -56,7 +58,7 @@ defmodule LocallinkApi.Chat do
   end
 
   @doc """
-  Lists all conversations of the user.
+  Содержит список всех разговоров пользователя.
   """
   def list_user_conversations(user_id) do
     Conversation

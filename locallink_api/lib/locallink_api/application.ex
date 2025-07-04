@@ -1,3 +1,5 @@
+# точка входа main , включаеи всё что нужно
+
 defmodule LocallinkApi.Application do
   @moduledoc false
 
