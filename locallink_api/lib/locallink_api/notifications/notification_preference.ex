@@ -1,3 +1,5 @@
+# lib/locallink_api/notifications/notification_preference.ex
+
 defmodule LocallinkApi.Notifications.NotificationPreference do
   use Ecto.Schema
   import Ecto.Changeset
@@ -36,6 +38,10 @@ defmodule LocallinkApi.Notifications.NotificationPreference do
     timestamps()
   end
 
+  @doc """
+  Применяет входящие атрибуты и обновляет `:last_location_update`,
+  обрезая микросекунды.
+  """
   def changeset(preference, attrs) do
     preference
     |> cast(attrs, [
@@ -48,7 +54,10 @@ defmodule LocallinkApi.Notifications.NotificationPreference do
     |> validate_number(:min_price, greater_than: 0)
     |> validate_number(:max_price, greater_than: 0)
     |> validate_price_range()
-    |> put_change(:last_location_update, NaiveDateTime.utc_now())
+    |> put_change(
+      :last_location_update,
+      NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    )
   end
 
   defp validate_price_range(changeset) do

@@ -36,7 +36,7 @@ config :phoenix, :plug_init_mode, :runtime
 # Configure Guardian for development
 config :locallink_api, LocallinkApi.Guardian,
   issuer: "locallink_api",
-  secret_key: "your-development-secret-key-make-it-very-long-and-secure-for-jwt"
+  secret_key: "xQmA78HdQp3hKxLs+VhqWz1d9UebCxlZc6Agyb8fWTzt1YKqvSBRYk+Ak0CB+I8N"
 
 # Disable Swoosh API client as it is only required for production adapters
 config :swoosh, :api_client, false

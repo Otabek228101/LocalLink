@@ -22,7 +22,8 @@ defmodule LocallinkApi.Notifications do
         |> NotificationPreference.changeset(%{})
         |> Repo.insert()
 
-      preferences -> {:ok, preferences}
+      preferences ->
+        {:ok, preferences}
     end
   end
 
@@ -36,7 +37,8 @@ defmodule LocallinkApi.Notifications do
         |> NotificationPreference.changeset(attrs)
         |> Repo.update()
 
-      error -> error
+      error ->
+        error
     end
   end
 
@@ -62,7 +64,8 @@ defmodule LocallinkApi.Notifications do
   """
   def notify_nearby_users(post_id) do
     case Repo.get(Post, post_id) |> Repo.preload(:user) do
-      nil -> {:error, :post_not_found}
+      nil ->
+        {:error, :post_not_found}
 
       post ->
         # Найти пользователей рядом с постом
@@ -81,7 +84,6 @@ defmodule LocallinkApi.Notifications do
   Отправить уведомление конкретному пользователю.
   """
   def send_notification(user, post, distance_meters, preferences) do
-    # Проверить можно ли отправлять уведомление
     if should_notify?(user, post, preferences) do
       notification_attrs = %{
         user_id: user.id,
@@ -100,7 +102,8 @@ defmodule LocallinkApi.Notifications do
           broadcast_notification(user.id, notification)
           {:ok, notification}
 
-        error -> error
+        error ->
+          error
       end
     else
       {:ok, :skipped}
@@ -195,27 +198,22 @@ defmodule LocallinkApi.Notifications do
 
       case Ecto.Adapters.SQL.query(Repo, query, [post.coordinates, post.user_id]) do
         {:ok, %{rows: rows}} ->
-          Enum.map(rows, fn [user_id, first_name, last_name, email, radius, notify_jobs, notify_tasks, notify_events, notify_help, is_active, distance] ->
-            user = %User{
-              id: user_id,
-              first_name: first_name,
-              last_name: last_name,
-              email: email
-            }
-
-            preferences = %{
-              notification_radius_km: radius,
-              notify_jobs: notify_jobs,
-              notify_tasks: notify_tasks,
-              notify_events: notify_events,
-              notify_help: notify_help,
-              is_active: is_active
-            }
-
-            {user, round(distance), preferences}
+          Enum.map(rows, fn
+            [user_id, first_name, last_name, _email, radius, notify_jobs, notify_tasks, notify_events, notify_help, is_active, distance] ->
+              user = %User{id: user_id, first_name: first_name, last_name: last_name}
+              preferences = %{
+                notification_radius_km: radius,
+                notify_jobs: notify_jobs,
+                notify_tasks: notify_tasks,
+                notify_events: notify_events,
+                notify_help: notify_help,
+                is_active: is_active
+              }
+              {user, round(distance), preferences}
           end)
 
-        _error -> []
+        _error ->
+          []
       end
     else
       []
@@ -223,21 +221,20 @@ defmodule LocallinkApi.Notifications do
   end
 
   # Проверить нужно ли отправлять уведомление
-  defp should_notify?(user, post, preferences) do
+  defp should_notify?(_user, post, preferences) do
     cond do
       !preferences.is_active -> false
-      post.category == "job" && !preferences.notify_jobs -> false
-      post.category == "task" && !preferences.notify_tasks -> false
-      post.category == "event" && !preferences.notify_events -> false
-      post.category == "help_needed" && !preferences.notify_help -> false
-      is_quiet_hours?() -> false
-      true -> true
+      post.category == "job"         && !preferences.notify_jobs   -> false
+      post.category == "task"        && !preferences.notify_tasks  -> false
+      post.category == "event"       && !preferences.notify_events -> false
+      post.category == "help_needed" && !preferences.notify_help   -> false
+      is_quiet_hours?()              -> false
+      true                           -> true
     end
   end
 
-  # Проверить тихие часы
+  # Проверить тихие часы (22:00–08:00 UTC)
   defp is_quiet_hours? do
-    # Простая проверка - с 22:00 до 8:00
     current_hour = Time.utc_now().hour
     current_hour >= 22 || current_hour <= 8
   end
@@ -245,11 +242,11 @@ defmodule LocallinkApi.Notifications do
   # Создать заголовок уведомления
   defp create_notification_title(post) do
     case post.category do
-      "job" -> "💼 Работа рядом с вами"
-      "task" -> "✅ Задача поблизости"
-      "event" -> "🎉 Событие рядом"
+      "job"         -> "💼 Работа рядом с вами"
+      "task"        -> "✅ Задача поблизости"
+      "event"       -> "🎉 Событие рядом"
       "help_needed" -> "🆘 Нужна помощь рядом"
-      _ -> "📍 Объявление поблизости"
+      _             -> "📍 Объявление поблизости"
     end
   end
 
@@ -263,28 +260,27 @@ defmodule LocallinkApi.Notifications do
       end
 
     price_text = if post.price, do: ", #{post.price} #{post.currency}", else: ""
-
     "#{post.title}#{price_text}, #{distance_text} от вас"
   end
 
   # Определить тип уведомления
   defp get_notification_type(category) do
     case category do
-      "job" -> "job_nearby"
-      "task" -> "task_nearby"
-      "event" -> "event_nearby"
+      "job"         -> "job_nearby"
+      "task"        -> "task_nearby"
+      "event"       -> "event_nearby"
       "help_needed" -> "help_nearby"
-      _ -> "post_nearby"
+      _             -> "post_nearby"
     end
   end
 
   # Определить приоритет уведомления
   defp get_notification_priority(post) do
     case post.urgency do
-      "now" -> "urgent"
-      "today" -> "high"
+      "now"      -> "urgent"
+      "today"    -> "high"
       "tomorrow" -> "normal"
-      _ -> "normal"
+      _          -> "normal"
     end
   end
 

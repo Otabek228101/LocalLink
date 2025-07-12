@@ -1,16 +1,13 @@
-# ролверяет токен ок или нет
 defmodule LocallinkApi.Guardian.AuthPipeline do
-  import Plug.Conn
-  import Guardian.Plug
+  use Guardian.Plug.Pipeline,
+    otp_app: :locallink_api,
+    module: LocallinkApi.Guardian,
+    error_handler: LocallinkApiWeb.AuthErrorHandler
 
-  @behaviour Plug
-
-  def init(opts), do: opts
-
-  def call(conn, _opts) do
-    conn
-    |> Guardian.Plug.VerifyHeader.call(scheme: "Bearer")
-    |> Guardian.Plug.EnsureAuthenticated.call([])
-    |> Guardian.Plug.LoadResource.call([])
-  end
+  # извлекаем токен из заголовка Authorization: Bearer ...
+  plug Guardian.Plug.VerifyHeader, realm: "Bearer"
+  # убеждаемся, что токен валидный
+  plug Guardian.Plug.EnsureAuthenticated
+  # сразу грузим ресурс (пользователя) в conn
+  plug Guardian.Plug.LoadResource
 end

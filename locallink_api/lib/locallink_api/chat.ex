@@ -1,5 +1,3 @@
-#Управляет диалогами и сообщениями
-
 defmodule LocallinkApi.Chat do
   @moduledoc """
   Контекст чата: обрабатывает разговоры и сообщения пользователей.
@@ -13,15 +11,22 @@ defmodule LocallinkApi.Chat do
   alias LocallinkApi.User
 
   @doc """
-  Запускает новый диалог между двумя пользователями о конкретной публикации, если она еще не существует.
+  Запускает новый диалог между двумя пользователями о конкретной публикации,
+  если он ещё не существует.
   """
-  def start_conversation(post_id, user_id, current_user_id) do
+  def start_conversation(post_id, participant_id, current_user_id) do
     post = Repo.get!(Post, post_id)
 
-    query = from c in Conversation,
-      where: c.post_id == ^post_id and ((c.user1_id == ^user_id and c.user2_id == ^current_user_id) or (c.user1_id == ^current_user_id and c.user2_id == ^user_id))
+    # Проверяем, есть ли уже диалог по этому посту между этими пользователями
+    conversation_query =
+      from(c in Conversation,
+        where:
+          c.post_id == ^post_id and
+            ((c.user1_id == ^participant_id and c.user2_id == ^current_user_id) or
+               (c.user1_id == ^current_user_id and c.user2_id == ^participant_id))
+      )
 
-    case Repo.one(query) do
+    case Repo.one(conversation_query) do
       nil ->
         %Conversation{}
         |> Conversation.changeset(%{
@@ -38,16 +43,20 @@ defmodule LocallinkApi.Chat do
   end
 
   @doc """
-  Отправляет сообщение внутри беседы.
+  Создаёт новое сообщение в диалоге.
   """
-  def send_message(attrs) do
+  def create_message(conversation_id, sender_id, body) do
     %Message{}
-    |> Message.changeset(attrs)
+    |> Message.changeset(%{
+      conversation_id: conversation_id,
+      sender_id: sender_id,
+      body: body
+    })
     |> Repo.insert()
   end
 
   @doc """
-  Возвращает все сообщения в переписке, включая последние.
+  Возвращает все сообщения в переписке, отсортированные по возрастанию времени создания.
   """
   def list_messages(conversation_id) do
     Message
@@ -58,7 +67,7 @@ defmodule LocallinkApi.Chat do
   end
 
   @doc """
-  Содержит список всех разговоров пользователя.
+  Список всех разговоров, в которых участвует пользователь.
   """
   def list_user_conversations(user_id) do
     Conversation
@@ -68,18 +77,13 @@ defmodule LocallinkApi.Chat do
     |> Repo.all()
   end
 
-
-  def list_user_conversations(user_id) do
-    from(c in Conversation,
-      where: c.user1_id == ^user_id or c.user2_id == ^user_id,
-      preload: [:user1, :user2]
-    )
-    |> Repo.all()
-  end
-
+  @doc """
+  Получает или создаёт диалог между двумя указанными пользователями
+  (без учёта конкретного поста).
+  """
   def get_or_create_conversation(user_id, participant_id) do
     case Repo.get_by(Conversation, user1_id: user_id, user2_id: participant_id) ||
-         Repo.get_by(Conversation, user1_id: participant_id, user2_id: user_id) do
+           Repo.get_by(Conversation, user1_id: participant_id, user2_id: user_id) do
       nil ->
         %Conversation{}
         |> Conversation.changeset(%{user1_id: user_id, user2_id: participant_id})
@@ -90,24 +94,11 @@ defmodule LocallinkApi.Chat do
     end
   end
 
-  def get_conversation!(id), do: Repo.get!(Conversation, id) |> Repo.preload([:user1, :user2])
-
-  def list_messages(conversation_id) do
-    from(m in Message,
-      where: m.conversation_id == ^conversation_id,
-      order_by: [asc: m.inserted_at],
-      preload: [:sender]
-    )
-    |> Repo.all()
-  end
-
-  def create_message(conversation_id, sender_id, body) do
-    %Message{}
-    |> Message.changeset(%{
-      conversation_id: conversation_id,
-      sender_id: sender_id,
-      body: body
-    })
-    |> Repo.insert()
+  @doc """
+  Получает конкретный диалог по ID с предзагрузкой участников.
+  """
+  def get_conversation!(id) do
+    Repo.get!(Conversation, id)
+    |> Repo.preload([:user1, :user2, :post])
   end
 end

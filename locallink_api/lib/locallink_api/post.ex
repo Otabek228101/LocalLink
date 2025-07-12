@@ -56,20 +56,16 @@ defmodule LocallinkApi.Post do
     |> validate_event_fields()
   end
 
-  # ✅ Проверка координат
   defp validate_coordinates(changeset) do
     case get_field(changeset, :coordinates) do
       %Geo.Point{} -> changeset
-      nil -> changeset  # координаты не обязательны
+      nil -> changeset
       _ -> add_error(changeset, :coordinates, "must be a valid Geo.Point")
     end
   end
 
-  # ✅ Проверка полей события, если это пост типа "event"
   defp validate_event_fields(changeset) do
-    post_type = get_field(changeset, :post_type)
-
-    if post_type == "event" do
+    if get_field(changeset, :post_type) == "event" do
       changeset
       |> validate_required([:event_date, :max_participants])
       |> validate_number(:max_participants, greater_than: 0)

@@ -1,0 +1,987 @@
+{
+  "info": {
+    "name": "LocalLink API - Полная коллекция",
+    "description": "Полная коллекция для тестирования LocalLink API с двумя пользователями и чатом",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "api_url",
+      "value": "{{base_url}}/api/v1"
+    },
+    {
+      "key": "auth_token_user1",
+      "value": ""
+    },
+    {
+      "key": "auth_token_user2",
+      "value": ""
+    },
+    {
+      "key": "user1_id",
+      "value": ""
+    },
+    {
+      "key": "user2_id",
+      "value": ""
+    },
+    {
+      "key": "post_id",
+      "value": ""
+    },
+    {
+      "key": "offer_id",
+      "value": ""
+    },
+    {
+      "key": "conversation_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "🔍 Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Health check successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.eql('healthy');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication - User 1 (Работодатель)",
+      "item": [
+        {
+          "name": "Register User 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('auth_token_user1', response.token);",
+                  "    pm.environment.set('user1_id', response.user.id);",
+                  "    pm.test('User 1 registration successful', () => {",
+                  "        pm.expect(response.token).to.exist;",
+                  "        pm.expect(response.user.email).to.eql('employer@example.com');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Registration failed or user exists', () => {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([201, 422]);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"employer@example.com\",\n    \"password\": \"password123\",\n    \"first_name\": \"Анна\",\n    \"last_name\": \"Иванова\",\n    \"phone\": \"+998901234567\",\n    \"location\": \"Ташкент, Мирзо-Улугбек\",\n    \"skills\": \"Менеджмент, Организация\",\n    \"availability\": \"Полный день\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/register",
+              "host": ["{{api_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Login User 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('auth_token_user1', response.token);",
+                  "    pm.environment.set('user1_id', response.user.id);",
+                  "    pm.test('User 1 login successful', () => {",
+                  "        pm.expect(response.token).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employer@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/login",
+              "host": ["{{api_url}}"],
+              "path": ["login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication - User 2 (Исполнитель)",
+      "item": [
+        {
+          "name": "Register User 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('auth_token_user2', response.token);",
+                  "    pm.environment.set('user2_id', response.user.id);",
+                  "    pm.test('User 2 registration successful', () => {",
+                  "        pm.expect(response.token).to.exist;",
+                  "        pm.expect(response.user.email).to.eql('worker@example.com');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Registration failed or user exists', () => {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([201, 422]);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"worker@example.com\",\n    \"password\": \"password123\",\n    \"first_name\": \"Дмитрий\",\n    \"last_name\": \"Петров\",\n    \"phone\": \"+998907654321\",\n    \"location\": \"Ташкент, Юнус-Абад\",\n    \"skills\": \"Python, Django, JavaScript, React\",\n    \"availability\": \"Неполный день\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/register",
+              "host": ["{{api_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Login User 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('auth_token_user2', response.token);",
+                  "    pm.environment.set('user2_id', response.user.id);",
+                  "    pm.test('User 2 login successful', () => {",
+                  "        pm.expect(response.token).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"worker@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/login",
+              "host": ["{{api_url}}"],
+              "path": ["login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Posts Management",
+      "item": [
+        {
+          "name": "User 1: Create Job Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('post_id', response.post.id);",
+                  "    pm.test('Post created by User 1', () => {",
+                  "        pm.expect(response.post.id).to.exist;",
+                  "        pm.expect(response.post.title).to.include('программист');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"post\": {\n    \"title\": \"Нужен программист Python\",\n    \"description\": \"Требуется разработать небольшой веб-сайт на Django. Опыт работы от 2 лет. Сроки - 2 недели.\",\n    \"category\": \"job\",\n    \"post_type\": \"offer\",\n    \"location\": \"Ташкент, Мирзо-Улугбек\",\n    \"urgency\": \"this_week\",\n    \"price\": 500000,\n    \"currency\": \"UZS\",\n    \"skills_required\": \"Python, Django, HTML, CSS, JavaScript\",\n    \"duration_estimate\": \"2 недели\",\n    \"max_distance_km\": 15,\n    \"contact_preference\": \"app\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/posts",
+              "host": ["{{api_url}}"],
+              "path": ["posts"]
+            }
+          }
+        },
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/posts",
+              "host": ["{{api_url}}"],
+              "path": ["posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Posts retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.posts).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Specific Post",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_url}}/posts/{{post_id}}",
+              "host": ["{{api_url}}"],
+              "path": ["posts", "{{post_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post details retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.post.id).to.eql(pm.environment.get('post_id'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💼 Offers System",
+      "item": [
+        {
+          "name": "User 2: Accept Original Price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('offer_id', response.offer.id);",
+                  "    pm.test('Offer created successfully', () => {",
+                  "        pm.expect(response.offer.id).to.exist;",
+                  "        pm.expect(response.offer.status).to.eql('accepted');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Готов выполнить работу за указанную цену! У меня есть опыт с Django и Python.\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/posts/{{post_id}}/offers/accept-price",
+              "host": ["{{api_url}}"],
+              "path": ["posts", "{{post_id}}", "offers", "accept-price"]
+            }
+          }
+        },
+        {
+          "name": "User 2: Make Counter Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offered_price\": 400000,\n \"currency\":\"UZS\",\n \"message\": \"Могу сделать за 400к сум. Качество гарантирую, портфолио могу показать.\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/posts/{{post_id}}/offers/counter-offer",
+              "host": ["{{api_url}}"],
+              "path": ["posts", "{{post_id}}", "offers", "counter-offer"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Counter offer created', () => {",
+                  "        pm.expect(response.offer.status).to.eql('pending');",
+                  "        pm.expect(response.offer.offered_price).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 1: Get Offers for Post",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/posts/{{post_id}}/offers",
+              "host": ["{{api_url}}"],
+              "path": ["posts", "{{post_id}}", "offers"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Offers retrieved for post', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.offers).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 1: Accept Offer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/offers/{{offer_id}}/accept",
+              "host": ["{{api_url}}"],
+              "path": ["offers", "{{offer_id}}", "accept"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Offer accepted', () => {",
+                  "        pm.expect(response.offer.status).to.eql('accepted');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 2: Complete Work",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/offers/{{offer_id}}/complete",
+              "host": ["{{api_url}}"],
+              "path": ["offers", "{{offer_id}}", "complete"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Work completed', () => {",
+                  "        pm.expect(response.offer.status).to.eql('completed');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💬 Chat System",
+      "item": [
+        {
+          "name": "User 2: Start Conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('conversation_id', response.conversation.id);",
+                  "    pm.test('Conversation created', () => {",
+                  "        pm.expect(response.conversation.id).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"post_id\": \"{{post_id}}\",\n  \"participant_id\": \"{{user1_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/conversations",
+              "host": ["{{api_url}}"],
+              "path": ["conversations"]
+            }
+          }
+        },
+        {
+          "name": "User 2: Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Привет! Я заинтересован в вашем проекте. Могу показать портфолио.\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/conversations/{{conversation_id}}/messages",
+              "host": ["{{api_url}}"],
+              "path": ["conversations", "{{conversation_id}}", "messages"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Message sent', () => {",
+                  "        pm.expect(response.message.body).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 1: Reply Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Привет! Да, буду рад посмотреть ваше портфолио. Когда можете начать?\"\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/conversations/{{conversation_id}}/messages",
+              "host": ["{{api_url}}"],
+              "path": ["conversations", "{{conversation_id}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/conversations/{{conversation_id}}/messages",
+              "host": ["{{api_url}}"],
+              "path": ["conversations", "{{conversation_id}}", "messages"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Messages retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.messages).to.be.an('array');",
+                  "    pm.expect(response.messages.length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 1: Get All Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/conversations",
+              "host": ["{{api_url}}"],
+              "path": ["conversations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Conversations retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.conversations).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "⭐ Reviews System",
+      "item": [
+        {
+          "name": "User 1: Leave Review for User 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"review\": {\n    \"reviewee_id\": \"{{user2_id}}\",\n    \"post_id\": \"{{post_id}}\",\n    \"rating\": 5,\n    \"work_quality\": 5,\n    \"communication\": 4,\n    \"timeliness\": 5,\n    \"would_recommend\": true,\n    \"review_type\": \"work_completed\",\n    \"comment\": \"Отличная работа! Сайт сделан качественно и в срок. Рекомендую!\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/reviews",
+              "host": ["{{api_url}}"],
+              "path": ["reviews"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Review created', () => {",
+                  "        pm.expect(response.review.rating).to.eql(5);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User 2 Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/users/{{user2_id}}/reviews",
+              "host": ["{{api_url}}"],
+              "path": ["users", "{{user2_id}}", "reviews"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User reviews retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.reviews).to.be.an('array');",
+                  "    pm.expect(response.stats).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "User 2: Update Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 41.2995,\n  \"lng\": 69.2401\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/notifications/location",
+              "host": ["{{api_url}}"],
+              "path": ["notifications", "location"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Location updated', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('Location updated');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 2: Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/notifications/preferences",
+              "host": ["{{api_url}}"],
+              "path": ["notifications", "preferences"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Preferences retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.preferences).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 2: Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferences\": {\n    \"notification_radius_km\": 5.0,\n    \"notify_jobs\": true,\n    \"notify_tasks\": true,\n    \"notify_events\": false,\n    \"notify_help\": true,\n    \"weekend_notifications\": true,\n    \"min_price\": 100000,\n    \"max_price\": 1000000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_url}}/notifications/preferences",
+              "host": ["{{api_url}}"],
+              "path": ["notifications", "preferences"]
+            }
+          }
+        },
+        {
+          "name": "User 2: Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/notifications?limit=20",
+              "host": ["{{api_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Notifications retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.notifications).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🗂️ User Profiles",
+      "item": [
+        {
+          "name": "User 1: Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user1}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/me",
+              "host": ["{{api_url}}"],
+              "path": ["me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User 1 profile retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.user.email).to.eql('employer@example.com');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 2: Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token_user2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{api_url}}/me",
+              "host": ["{{api_url}}"],
+              "path": ["me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User 2 profile retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.user.email).to.eql('worker@example.com');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

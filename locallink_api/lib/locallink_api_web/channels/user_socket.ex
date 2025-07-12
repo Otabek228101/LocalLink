@@ -5,14 +5,14 @@ defmodule LocallinkApiWeb.UserSocket do
   channel "chat:*", LocallinkApiWeb.ChatChannel
   channel "notifications:*", LocallinkApiWeb.NotificationChannel
 
-  #Параметры сокета передаются от клиента и могут использоваться для проверки подлинности пользователя.
   def connect(%{"token" => token}, socket, _connect_info) do
-    case LocallinkApi.Guardian.resource_from_token(token) do
-      {:ok, user, _claims} ->
-        {:ok, assign(socket, :current_user, user)}
-
-      _ ->
-        :error
+    case LocallinkApi.Guardian.decode_and_verify(token) do
+      {:ok, claims} ->
+        case LocallinkApi.Guardian.resource_from_claims(claims) do
+          {:ok, user} -> {:ok, assign(socket, :current_user, user)}
+          _ -> :error
+        end
+      _ -> :error
     end
   end
 
