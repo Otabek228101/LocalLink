@@ -12,22 +12,27 @@ defmodule LocallinkApi.Reviews do
   Создает отзыв о пользователе за выполненную работу.
   """
   def create_review(reviewer_id, reviewee_id, post_id, attrs \\ %{}) do
-    attrs = Map.merge(attrs, %{
-      "reviewer_id" => reviewer_id,
-      "reviewee_id" => reviewee_id,
-      "post_id" => post_id
-    })
+    # Проверяем что пользователь не оставляет отзыв сам себе
+    if reviewer_id == reviewee_id do
+      {:error, "Cannot review yourself"}
+    else
+      attrs = Map.merge(attrs, %{
+        "reviewer_id" => reviewer_id,
+        "reviewee_id" => reviewee_id,
+        "post_id" => post_id
+      })
 
-    %Review{}
-    |> Review.changeset(attrs)
-    |> Repo.insert()
-    |> case do
-      {:ok, review} ->
-        # Обновляем средний рейтинг пользователя
-        update_user_rating(reviewee_id)
-        {:ok, review}
+      %Review{}
+      |> Review.changeset(attrs)
+      |> Repo.insert()
+      |> case do
+        {:ok, review} ->
+          # Обновляем средний рейтинг пользователя
+          Task.start(fn -> update_user_rating(reviewee_id) end)
+          {:ok, review}
 
-      error -> error
+        error -> error
+      end
     end
   end
 
@@ -38,7 +43,7 @@ defmodule LocallinkApi.Reviews do
     Review
     |> where([r], r.reviewee_id == ^user_id)
     |> order_by(desc: :inserted_at)
-    |> preload([:reviewer, :post])
+    |> preload([:reviewer, :reviewee, :post])
     |> Repo.all()
   end
 
@@ -57,18 +62,23 @@ defmodule LocallinkApi.Reviews do
   Проверяет, может ли пользователь оставить отзыв.
   """
   def can_leave_review?(reviewer_id, reviewee_id, post_id) do
-    # Проверяем, что отзыва еще нет
-    existing = Repo.get_by(Review,
-      reviewer_id: reviewer_id,
-      reviewee_id: reviewee_id,
-      post_id: post_id
-    )
+    cond do
+      reviewer_id == reviewee_id ->
+        false
 
-    is_nil(existing)
+      true ->
+        # Проверяем, что отзыва еще нет
+        existing = Repo.get_by(Review,
+          reviewer_id: reviewer_id,
+          reviewee_id: reviewee_id,
+          post_id: post_id
+        )
+        is_nil(existing)
+    end
   end
 
   @doc """
-  Получает статистику отзывов пользователя.
+  Получает статистику отзывов пользователя с безопасной обработкой nil.
   """
   def get_user_review_stats(user_id) do
     query = from r in Review,
@@ -84,23 +94,57 @@ defmodule LocallinkApi.Reviews do
 
     case Repo.one(query) do
       nil ->
-        %{
-          total_reviews: 0,
-          average_rating: 0.0,
-          average_work_quality: 0.0,
-          average_communication: 0.0,
-          average_timeliness: 0.0,
-          recommendation_rate: 0.0
-        }
+        default_stats()
+
+      %{total_reviews: 0} ->
+        default_stats()
 
       stats ->
-        stats
-        |> Map.update(:average_rating, 0.0, &round_rating/1)
-        |> Map.update(:average_work_quality, 0.0, &round_rating/1)
-        |> Map.update(:average_communication, 0.0, &round_rating/1)
-        |> Map.update(:average_timeliness, 0.0, &round_rating/1)
-        |> Map.update(:recommendation_rate, 0.0, &(&1 * 100 |> Float.round(1)))
+        %{
+          total_reviews: stats.total_reviews || 0,
+          average_rating: safe_round_rating(stats.average_rating),
+          average_work_quality: safe_round_rating(stats.average_work_quality),
+          average_communication: safe_round_rating(stats.average_communication),
+          average_timeliness: safe_round_rating(stats.average_timeliness),
+          recommendation_rate: safe_round_percentage(stats.recommendation_rate)
+        }
     end
+  end
+
+  # ===============================
+  # ПРИВАТНЫЕ ФУНКЦИИ
+  # ===============================
+
+  # Безопасное округление рейтинга
+  defp safe_round_rating(nil), do: 0.0
+  defp safe_round_rating(rating) when is_number(rating) do
+    rating
+    |> Float.round(1)
+    |> max(0.0)
+    |> min(5.0)
+  end
+  defp safe_round_rating(_), do: 0.0
+
+  # Безопасное округление процентов
+  defp safe_round_percentage(nil), do: 0.0
+  defp safe_round_percentage(rate) when is_number(rate) do
+    (rate * 100)
+    |> Float.round(1)
+    |> max(0.0)
+    |> min(100.0)
+  end
+  defp safe_round_percentage(_), do: 0.0
+
+  # Статистика по умолчанию
+  defp default_stats do
+    %{
+      total_reviews: 0,
+      average_rating: 0.0,
+      average_work_quality: 0.0,
+      average_communication: 0.0,
+      average_timeliness: 0.0,
+      recommendation_rate: 0.0
+    }
   end
 
   # Обновляет средний рейтинг пользователя в его профиле
@@ -109,12 +153,9 @@ defmodule LocallinkApi.Reviews do
 
     from(u in User, where: u.id == ^user_id)
     |> Repo.update_all(set: [
-      rating: stats.average_rating,
-      total_jobs_completed: stats.total_reviews  # Количество выполненных работ
+      rating: Decimal.new(to_string(stats.average_rating)),
+      total_jobs_completed: stats.total_reviews,
+      updated_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
     ])
   end
-
-  defp round_rating(nil), do: 0.0
-  defp round_rating(rating) when is_float(rating), do: Float.round(rating, 1)
-  defp round_rating(rating), do: rating
 end

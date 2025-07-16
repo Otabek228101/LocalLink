@@ -1,6 +1,4 @@
 # подключение к db
-
-
 defmodule LocallinkApi.Repo do
   use Ecto.Repo,
     otp_app: :locallink_api,

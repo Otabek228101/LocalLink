@@ -1,9 +1,11 @@
 defmodule LocallinkApi.Offers do
   @moduledoc "Контекст для управления предложениями."
 
+  use Ecto.Schema
+
   import Ecto.Query, warn: false
-  alias LocallinkApi.{Repo, Posts}
   alias LocallinkApi.Offers.Offer
+  alias LocallinkApi.{Repo, Posts}
   alias LocallinkApi.Chat
 
   @doc "Принять оригинальную цену поста"
@@ -41,20 +43,21 @@ defmodule LocallinkApi.Offers do
 
   @doc "Принять оффер"
   def accept_offer(offer_id, user_id) do
-    with {:ok, offer} <- get_offer(offer_id),
-         true <- offer.receiver_id == user_id and offer.status == "pending"
-    do
+    with {:ok, %Offer{} = offer} <- get_offer(offer_id),
+         true <- offer.post.user_id == user_id do
       offer
       |> Offer.changeset(%{status: "accepted", accepted_at: NaiveDateTime.utc_now()})
       |> Repo.update()
-      |> tap(fn
-        {:ok, upd} -> decline_other_offers(upd.post_id, upd.id)
-        _ -> :ok
-      end)
     else
-      _ -> {:error, "Cannot accept this offer"}
+      {:error, :not_found} ->
+        {:error, :not_found}
+
+      false ->
+        {:error, :not_allowed}
     end
   end
+
+
 
   @doc "Отклонить оффер"
   def decline_offer(offer_id, user_id) do
@@ -107,25 +110,33 @@ defmodule LocallinkApi.Offers do
       {:error, "Cannot make offer to yourself"}
     else
       Repo.transaction(fn ->
-        case %Offer{} |> Offer.changeset(params) |> Repo.insert() do
-          {:ok, offer} ->
-            Chat.start_conversation(offer.post_id, offer.offerer_id, offer.receiver_id)
-            offer
-
+        # 1) insert the offer
+        with {:ok, %Offer{} = offer} <- %Offer{} |> Offer.changeset(params) |> Repo.insert() do
+          # 2) start the conversation
+          case Chat.start_conversation(offer.post_id, offer.offerer_id, offer.receiver_id) do
+            {:ok, convo} ->
+              # 3) link the offer to the new conversation
+              offer
+              |> Offer.changeset(%{"conversation_id" => convo.id})
+              |> Repo.update!()
+            {:error, cs} ->
+              Repo.rollback(cs)
+          end
+        else
           {:error, cs} ->
             Repo.rollback(cs)
         end
       end)
       |> case do
-        {:ok, offer} -> {:ok, offer}
-        {:error, cs} -> {:error, cs}
+        {:ok, %Offer{} = updated_offer} -> {:ok, updated_offer}
+        {:error, cs}                    -> {:error, cs}
       end
     end
   end
 
   # Получить оффер по id
-  defp get_offer(id) do
-    case Repo.get(Offer, id) do
+  def get_offer(id) do
+    case Repo.get(Offer, id) |> Repo.preload(:post) do
       nil   -> {:error, :not_found}
       offer -> {:ok, offer}
     end

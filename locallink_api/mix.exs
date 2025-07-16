@@ -46,6 +46,7 @@ defmodule LocallinkApi.MixProject do
       {:floki, ">= 0.30.0", only: :test},
       {:ex_machina, "~> 2.7.0", only: [:test, :dev]},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:telemetry_metrics, "~> 0.6.1"},
       {:dialyxir, "~> 1.3", only: [:dev], runtime: false}
     ]
   end

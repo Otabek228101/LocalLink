@@ -5,33 +5,39 @@ defmodule LocallinkApi.Repo.Migrations.CreateReviews do
     create table(:reviews, primary_key: false) do
       add :id, :binary_id, primary_key: true
 
-      # Оценки
+      # Основные поля
       add :rating, :integer, null: false
+      add :comment, :text
       add :work_quality, :integer
       add :communication, :integer
       add :timeliness, :integer
-
-      # Контент
-      add :comment, :text
       add :would_recommend, :boolean, default: true
-      add :review_type, :string, null: false
+      add :review_type, :string, default: "work_completed"
       add :is_mutual, :boolean, default: false
 
       # Связи
-      add :reviewer_id, references(:users, type: :binary_id), null: false
-      add :reviewee_id, references(:users, type: :binary_id), null: false
-      add :post_id, references(:posts, type: :binary_id), null: false
+      add :reviewer_id, references(:users, on_delete: :delete_all, type: :binary_id), null: false
+      add :reviewee_id, references(:users, on_delete: :delete_all, type: :binary_id), null: false
+      add :post_id, references(:posts, on_delete: :delete_all, type: :binary_id), null: false
 
       timestamps()
     end
 
-    # Индексы для быстрого поиска
-    create index(:reviews, [:reviewee_id])                    # Отзывы О пользователе
-    create index(:reviews, [:reviewer_id])                    # Отзывы ОТ пользователя
-    create index(:reviews, [:post_id])                        # Отзывы по объявлению
-    create index(:reviews, [:rating])                         # Сортировка по рейтингу
+    # Индексы для производительности
+    create index(:reviews, [:reviewee_id])
+    create index(:reviews, [:reviewer_id])
+    create index(:reviews, [:post_id])
+    create index(:reviews, [:rating])
+    create index(:reviews, [:inserted_at])
 
-    # Уникальность: один человек может оставить только один отзыв другому за одну работу
+    # Уникальное ограничение - один отзыв на пару пользователь-пост
     create unique_index(:reviews, [:reviewer_id, :reviewee_id, :post_id])
+
+    # Проверочные ограничения
+    create constraint(:reviews, :rating_range, check: "rating >= 1 AND rating <= 5")
+    create constraint(:reviews, :work_quality_range, check: "work_quality IS NULL OR (work_quality >= 1 AND work_quality <= 5)")
+    create constraint(:reviews, :communication_range, check: "communication IS NULL OR (communication >= 1 AND communication <= 5)")
+    create constraint(:reviews, :timeliness_range, check: "timeliness IS NULL OR (timeliness >= 1 AND timeliness <= 5)")
+    create constraint(:reviews, :different_users, check: "reviewer_id != reviewee_id")
   end
 end

@@ -1,18 +1,17 @@
 defmodule LocallinkApiWeb.UserSocket do
   use Phoenix.Socket
+  alias LocallinkApi.Guardian
 
-  ## Channels
   channel "chat:*", LocallinkApiWeb.ChatChannel
-  channel "notifications:*", LocallinkApiWeb.NotificationChannel
+
+  transport :websocket, Phoenix.Transports.WebSocket
 
   def connect(%{"token" => token}, socket, _connect_info) do
-    case LocallinkApi.Guardian.decode_and_verify(token) do
-      {:ok, claims} ->
-        case LocallinkApi.Guardian.resource_from_claims(claims) do
-          {:ok, user} -> {:ok, assign(socket, :current_user, user)}
-          _ -> :error
-        end
-      _ -> :error
+    case Guardian.resource_from_token(token) do
+      {:ok, user, _claims} ->
+        {:ok, assign(socket, :current_user, user)}
+      _ ->
+        :error
     end
   end
 
