@@ -1,0 +1,42 @@
+# .dockerignore
+# Исключаем файлы которые не нужны при сборке Docker образа
+
+# Build artifacts
+_build/
+deps/
+.elixir_ls/
+
+# Development files
+.env
+.env.*
+*.log
+
+# Git
+.git/
+.gitignore
+README.md
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (если есть)
+node_modules/
+npm-debug.log*
+
+# Test files
+test/
+cover/
+
+# Temporary files
+tmp/
+temp/

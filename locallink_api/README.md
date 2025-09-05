@@ -312,3 +312,11 @@ docker-compose logs -f
 **LOCALLINK** - Соединяем людей локально! 🤝
 
 Developed for Hackathon 2025 🏆
+
+<div class="flex items-center space-x-2 flex-1"><span class="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-medium">Price: $1500+</span><span class="px-3 py-1 bg-blue-500 text-white rounded-full text-xs font-medium">Distance: 0-5km</span><span class="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-medium">Urgent</span></div>
+
+это не должно быть статично т.к это фильрты и они должны изменяться ,так же не должно быть постов статичных, они должны приходть из db 
+
+так жн не должно быть этого ведь это просто как выглядит телефон 
+
+<div class="flex items-center justify-between mb-4"><div class="text-2xl">🏠</div><div class="text-lg font-semibold">12:00</div><div class="flex items-center space-x-1"><div class="text-sm">📶</div><div class="text-sm">📶</div><div class="text-sm">🔋</div></div></div>

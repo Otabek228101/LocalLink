@@ -1,0 +1,61 @@
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ll-pill-bg: #eaf3ff;
+  --ll-primary: #2b7cff;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: #f7f9fc;
+}
+
+/* Общие кнопки-«пилюли» как в макете */
+.ll-pill {
+  @apply rounded-full px-3 h-7 inline-flex items-center text-[12px] font-medium;
+  background: var(--ll-pill-bg);
+  color: #0f4aa6;
+  border: 1px solid rgba(43,124,255,.15);
+}
+
+/* Верхние вкладки (Jobs/Activities) */
+.ll-tab {
+  @apply rounded-full px-4 h-8 inline-flex items-center text-[13px] font-semibold transition;
+  background: #eef4ff;
+  color: #2b7cff;
+}
+.ll-tab-active {
+  background: linear-gradient(180deg,#4aa3ff 0%, #2b7cff 100%);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(43,124,255,.3);
+}
+
+/* Верхняя полоса */
+.ll-topbar {
+  @apply sticky top-0 z-40 w-full bg-white/90 backdrop-blur border-b border-slate-200;
+}
+
+/* Нижняя панель — всегда видна и на ПК */
+.ll-bnav {
+  @apply fixed bottom-0 left-0 right-0 z-40 h-16 bg-white border-t border-slate-200;
+}
+
+/* Флоат-кнопка в центре бота */
+.ll-fab {
+  @apply absolute left-1/2 -translate-x-1/2 -translate-y-6 w-16 h-16 rounded-full bg-white border border-slate-200 shadow-lg flex items-center justify-center;
+}
+
+/* Тень карточек */
+.card {
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+}
+
+/* Чтобы контент не уезжал под нижнюю панель */
+main { padding-bottom: 120px; }
