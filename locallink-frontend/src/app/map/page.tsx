@@ -1,57 +1,92 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import AppLayout from '../../components/layout/AppLayout';
-import apiService, { Post, ListResponse } from '../../services/api';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { useState, useEffect } from "react";
+import { fetchJobs, fetchEvents } from "../../services/api";
+
+const jobIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/1483/1483336.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
+const eventIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
 
 export default function MapPage() {
-  const [items, setItems] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
-    (async () => {
+    async function loadData() {
       try {
-        const resp = (await apiService.listPosts({ per_page: 50 })) as ListResponse<Post>;
-        const arr = Array.isArray(resp?.data) ? resp.data : [];
-        setItems(arr);
-      } catch (e: any) {
-        setError(e?.message ?? 'Не удалось загрузить посты');
-        setItems([]); // гарантируем массив
-      } finally {
-        setLoading(false);
+        const jobsData = await fetchJobs();
+        const eventsData = await fetchEvents();
+        setJobs(jobsData);
+        setEvents(eventsData);
+      } catch (err) {
+        console.error("Error loading data:", err);
       }
-    })();
+    }
+    loadData();
   }, []);
 
   return (
-    <AppLayout>
-      <div className="grid gap-4">
-        <h1 className="text-xl font-semibold">Карта</h1>
+    <div className="w-full h-screen relative">
+      <MapContainer
+        center={[41.3275, 69.2817]}
+        zoom={14}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-        {loading && <div className="text-gray-500">Загрузка…</div>}
-        {error && <div className="text-red-600 text-sm">{error}</div>}
+        {jobs.map((job) => (
+          <Marker
+            key={`job-${job.id}`}
+            position={[job.lat, job.lng]}
+            icon={jobIcon}
+            eventHandlers={{
+              click: () => setSelected(job),
+            }}
+          >
+            <Popup>{job.title}</Popup>
+          </Marker>
+        ))}
 
-        {!loading && !error && items.length === 0 && (
-          <div className="text-gray-500">Нет постов для отображения</div>
-        )}
+        {events.map((event) => (
+          <Marker
+            key={`event-${event.id}`}
+            position={[event.lat, event.lng]}
+            icon={eventIcon}
+            eventHandlers={{
+              click: () => setSelected(event),
+            }}
+          >
+            <Popup>{event.title}</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
 
-        {/* Временно список — чтобы было, что рендерить.
-            Когда подключите карту, используйте эти данные как маркеры. */}
-        <ul className="grid gap-3">
-          {items.map((p) => (
-            <li key={p.id} className="rounded-2xl border bg-white p-4">
-              <div className="font-medium">{p.title}</div>
-              <div className="text-sm text-gray-600 mt-1 line-clamp-2">
-                {p.description}
-              </div>
-              <div className="text-sm mt-2">
-                {p.price} {p.currency} • {p.category} • {p.urgency}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </AppLayout>
+      {/* Карточка выбранного объекта */}
+      {selected && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white p-4 rounded-2xl shadow-lg w-11/12 max-w-md">
+          <h2 className="text-lg font-semibold">{selected.title}</h2>
+          <p className="text-sm text-gray-600">{selected.category}</p>
+          <div className="flex justify-between mt-2">
+            <span className="text-blue-600 font-bold">{selected.distance ?? "—"}</span>
+            <span className="text-green-600">{selected.price ?? ""}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
