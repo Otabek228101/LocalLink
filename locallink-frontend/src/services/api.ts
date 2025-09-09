@@ -186,6 +186,19 @@ const apiService = {
     }
   },
 };
+import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+export async function fetchJobs() {
+  const res = await axios.get(`${API_URL}/api/jobs`);
+  return res.data;
+}
+
+export async function fetchEvents() {
+  const res = await axios.get(`${API_URL}/api/events`);
+  return res.data;
+}
 
 function saveToken(token: string) {
   if (typeof window === 'undefined') return;
